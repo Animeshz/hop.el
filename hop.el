@@ -78,6 +78,21 @@
 (defun hop-window-list ()
   "List of windows selected for hop/jump."
   (if (eq hop-all-windows t) (window-list) (list (selected-window))))
+
+(defun hop-indices-with-prefix (prefix string-list)
+  "Get the indices of all strings in STRING-LIST that start with PREFIX."
+  (let ((indices '()))
+    (dotimes (i (length string-list) indices)
+      (when (string-prefix-p prefix (nth i string-list))
+        (push i indices)))))
+
+(defun hop-calculate-jump-char (match)
+  "Evaulate jump position respecting `hop-hints-position`"
+  (let ((start (car (car match)))
+        (end (cdr (car match))))
+   (cond ((eq hop-hints-position 'start) start
+          (eq hop-hints-position 'middle) (truncate (+ start end) 2)
+          (eq hop-hints-position 'end) end))))
 ;; Helper Definitions :: END
 
 ;; Dimming Overlay Logic :: BEGIN
@@ -104,7 +119,6 @@
 ;; Dimming Overlay Logic :: END
 
 ;; Pattern Matching Logic :: BEGIN
-
 (defun hop--regex-matches-in-windows (regex-pattern windows)
   "Return a list of matches ((BEG . END) . WND), sorted by distance from the cursor position."
   (let* ((matches ())
@@ -137,11 +151,9 @@
       (dotimes (j hop-jump-keys-len)
          (push (concat (substring hop-jump-keys i (1+ i)) (substring hop-jump-keys j (1+ j))) double-hop-jump-keys-list)))
     (append (cl-subseq single-hop-jump-keys-list 0 num-single-hop-jump-keys) (reverse (cl-subseq double-hop-jump-keys-list 0 num-double-hop-jump-keys)))))
-
 ;; Pattern Matching Logic :: END
 
 ;; Hop Character Overlay Logic :: BEGIN
-
 (defun hop--overlay-jumps (matches hop-key)
   "Setup hints for hopping/jumping"
   (setq hop--key-overlay-save
@@ -151,9 +163,7 @@
                                (end (cdr (car m)))
                                (window (cdr m))
                                (marker-len (length hk))
-                               (marker-begin (cond ((eq hop-hints-position 'start) start)
-                                                   ((eq hop-hints-position 'middle) (truncate (+ begin end) 2))
-                                                   ((eq hop-hints-position 'end) end))))
+                               (marker-begin (hop-calculate-jump-char m)))
                           (if (= marker-len 1) (let ((ol1 (make-overlay
                                                            marker-begin
                                                            (1+ marker-begin)
@@ -183,14 +193,32 @@
   "Clear hints for hopping/jumping"
   (mapc #'delete-overlay hop--key-overlay-save)
   (setq hop--key-overlay-save nil))
-
 ;; Hop Character Overlay Logic :: END
 
-;; Updation and Movement Logic :: BEGIN
-;; Updation and Movement Logic :: END
+;; Main Logic (Updation and Movement) | API :: BEGIN
+(defun hop-word ()
+  (interactive)
+  (let* ((matches (hop--regex-matches-in-windows hop-word-regex (hop-window-list)))
+         (keys (hop--generate-jump-keys (length matches))))
+    (hop--overlay-jumps matches keys)
+    (let ((key-indices (hop-indices-with-prefix (string (read-char)) keys)))
+      (hop--overlay-jumps-done)
+      (if (= (length key-indices) 1)
+          (let* ((key-index (car key-indices))
+                 (match (nth key-index matches)))
+            (select-window (cdr match))
+            (goto-char (hop-calculate-jump-char match)))
+        (let* ((filtered-matches (cl-loop for index in key-indices collect (nth index matches)))
+               (filtered-keys (cl-loop for index in key-indices collect (substring (nth index keys) 1 2))))
+             (hop--overlay-jumps filtered-matches filtered-keys)
+             (let* ((key-index (car (hop-indices-with-prefix (string (read-char)) filtered-keys)))
+                    (match (nth key-index filtered-matches)))
+               (hop--overlay-jumps-done)
+               (select-window (cdr match))
+               (goto-char (hop-calculate-jump-char match))))))))
 
-;; Main Logic | API :: BEGIN
-;; Main Logic | API :: END
+
+;; Main Logic (Updation and Movement) | API :: END
 
 
 (provide 'hop)
