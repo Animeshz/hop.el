@@ -11,23 +11,46 @@
 ;; Emacs Motion on Speed!
 ;; Move anywhere in your buffer with 1 or 2 characters.
 ;;
+;; It requires https://github.com/syohex/emacs-pcre
+;; If you're using elpaca/straight as package manager, write the following package declaration:
+;;
+;; ```
+;; ;; install pcre(-dev) package first from system package manager
+;; (use-package pcre
+;;   :elpaca (pcre :host github :repo "syohex/emacs-pcre"
+;;                 :pre-build ("make" "all")
+;;                 :files (:default "pcre.el" "pcre-core.so")))
+;; (use-package hop
+;;   :elpaca (pcre :host github :repo "Animeshz/hop.el"))
+;; ```
+;;
 ;; Defines following (TODO: tentative)
 ;; hop-word
 ;; hop-char
 ;; hop-line
 ;; hop-line-skip-whitespace
-;; hop-pattern (maybe?)
 
 
 ;;; Code:
 
+(require 'cl-lib)
+(require 'pcre)
+
 ;; User Facing Options :: BEGIN
 (defcustom hop-jump-keys "asdghklqwertyuiopzxcvbnmfj"
-  "The keys to be permutated for hopping/jumping, rightmost are splitted first.")
+  "The keys to be permutated for hopping/jumping, rightmost are splitted first."
+  :type 'string)
+
 (defcustom hop-uppercase-hints nil
-  "A non-nil value means the keys will be displayed in uppercase.")
+  "A non-nil value means the keys will be displayed in uppercase."
+  :type 'boolean)
+
 (defcustom hop-hints-position 'start
-  "Where the hop hints be in a matched string.")
+  "Where the hop hints be in a matched string."
+  :type '(choice
+          (const :tag "start" start)
+          (const :tag "middle" middle)
+          (const :tag "end" end)))
 
 (defcustom hop-quit-key "<esc>"
   "The key to quit hop")
@@ -42,6 +65,13 @@
   "Face used for first character of all double character hops/jumps.")
 (defface hop-face-double-char-2 `((t (:foreground "#2b8db3" :background ,(face-background 'default) :weight bold)))
   "Face used for second character of all double character hops/jumps.")
+
+(defcustom hop-word-regex "((?:[A-Za-z0-9_]|(?<=\\w)-(?=\\w)(?![A-Z]))+)"
+  "Regex to use when matching a word")
+(defcustom hop-line-regex "^"
+  "Regex to use when matching a line")
+(defcustom hop-line-skip-whitespace-regex "^[^\\S\\r\\n]*([\\S\\r\\n])"
+  "Regex to use when matching a line skipping whitespace characters")
 ;; User Facing Options :: END
 
 ;; Helper Definitions :: BEGIN
@@ -54,7 +84,7 @@
 (defvar hop--dim-overlay-save nil
   "Hold overlays for cleanup later.")
 
-(defun hop--dim-overlay (wnd-list)
+(defun hop--dim-overlay (windows)
   "Applies dim-overlay to all the windows in wnd-list."
   (setq hop--dim-overlay-save
         (mapcar (lambda (w)
@@ -65,7 +95,7 @@
                     (overlay-put ol 'face 'hop-face-dim-unmatched)
                     (overlay-put ol 'window w)
                     ol))
-                wnd-list)))
+                windows)))
 
 (defun hop--dim-overlay-done ()
   "Clean up overlays."
