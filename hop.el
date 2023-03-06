@@ -105,15 +105,38 @@
 
 ;; Pattern Matching Logic :: BEGIN
 
-; PCRE Regex:
-; https://github.com/illikainen/are
-; https://github.com/syohex/emacs-pcre
-;
-; WORD: (?<=\s|^)\w
-; LINE: ^
-; LINE-SKIP-WHITESPACE: (?<=^\s+)\w
-; CHAR: escape(<c>)
-; PATTERN: <PATTERN>
+(defun hop--regex-matches-in-windows (regex-pattern windows)
+  "Return a list of matches ((BEG . END) . WND), sorted by distance from the cursor position."
+  (let* ((matches ())
+         (cursor-pos (point)))
+    (dolist (window windows)
+      (with-selected-window window
+        (save-excursion
+          (goto-char (window-start window))
+          (setq default-case-fold-search case-fold-search
+                case-fold-search nil)
+          (while (and (< (point) (window-end window))
+                      (pcre-re-search-forward regex-pattern (window-end window) t))
+            (let ((match-pos (match-beginning 0)))
+              (push (cons (cons match-pos (match-end 0)) window) matches)))
+          (setq case-fold-search default-case-fold-search))))
+    (sort matches (lambda (x y)
+                    (< (abs (- (car (car x)) cursor-pos))
+                       (abs (- (car (car y)) cursor-pos)))))))
+
+(defun hop--generate-jump-keys (n)
+  "Return all combinations of length LENGTH from the characters in STRING using hop-trie-backtrack-filling algorithm."
+  (let* ((hop-jump-keys-len (length hop-jump-keys))
+         (split-len (- hop-jump-keys-len 1))
+         (num-splits (ceiling (truncate (- n 1) split-len)))
+         (num-single-hop-jump-keys (min n (max 0 (- hop-jump-keys-len num-splits))))
+         (num-double-hop-jump-keys (max 0 (- n num-single-hop-jump-keys)))
+         (double-hop-jump-keys-list '())                             ; Probably extract this always been constant item somewhere else
+         (single-hop-jump-keys-list (mapcar 'string hop-jump-keys))) ; This also
+    (dotimes (i hop-jump-keys-len)
+      (dotimes (j hop-jump-keys-len)
+         (push (concat (substring hop-jump-keys i (1+ i)) (substring hop-jump-keys j (1+ j))) double-hop-jump-keys-list)))
+    (append (cl-subseq single-hop-jump-keys-list 0 num-single-hop-jump-keys) (reverse (cl-subseq double-hop-jump-keys-list 0 num-double-hop-jump-keys)))))
 
 ;; Pattern Matching Logic :: END
 
