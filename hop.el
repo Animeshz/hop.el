@@ -141,6 +141,49 @@
 ;; Pattern Matching Logic :: END
 
 ;; Hop Character Overlay Logic :: BEGIN
+
+(defun hop--overlay-jumps (matches hop-key)
+  "Setup hints for hopping/jumping"
+  (setq hop--key-overlay-save
+        (flatten-tree
+         (cl-mapcar #'(lambda (m hk)
+                        (let* ((start (car (car m)))
+                               (end (cdr (car m)))
+                               (window (cdr m))
+                               (marker-len (length hk))
+                               (marker-begin (cond ((eq hop-hints-position 'start) start)
+                                                   ((eq hop-hints-position 'middle) (truncate (+ begin end) 2))
+                                                   ((eq hop-hints-position 'end) end))))
+                          (if (= marker-len 1) (let ((ol1 (make-overlay
+                                                           marker-begin
+                                                           (1+ marker-begin)
+                                                           (window-buffer window))))
+                                                    (overlay-put ol1 'display hk)
+                                                    (overlay-put ol1 'window window)
+                                                    (overlay-put ol1 'face 'hop-face-single-char)
+                                                    (list ol1))
+                                               (let ((ol1 (make-overlay
+                                                           marker-begin
+                                                           (1+ marker-begin)
+                                                           (window-buffer window)))
+                                                     (ol2 (make-overlay
+                                                           (1+ marker-begin)
+                                                           (+ marker-begin 2)
+                                                           (window-buffer window))))
+                                                    (overlay-put ol1 'display (substring hk 0 1))
+                                                    (overlay-put ol1 'window window)
+                                                    (overlay-put ol1 'face 'hop-face-double-char-1)
+                                                    (overlay-put ol2 'display (message "%s" (substring hk 1 2)))
+                                                    (overlay-put ol2 'window window)
+                                                    (overlay-put ol2 'face 'hop-face-double-char-2)
+                                                    (list ol1 ol2)))))
+                    matches hop-key))))
+
+(defun hop--overlay-jumps-done ()
+  "Clear hints for hopping/jumping"
+  (mapc #'delete-overlay hop--key-overlay-save)
+  (setq hop--key-overlay-save nil))
+
 ;; Hop Character Overlay Logic :: END
 
 ;; Updation and Movement Logic :: BEGIN
