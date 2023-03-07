@@ -7,6 +7,7 @@ Emacs Motion on Speed!
 Move anywhere in your buffer with 1 or 2 keypress.
 ```
 
+
 ## Why?
 
 While there has been past options for jumping over the buffers like [avy](https://github.com/abo-abo/avy) and [ace-jump-mode](https://github.com/winterTTr/ace-jump-mode), they both didn't fit me due to various reasons & limitations.
@@ -15,12 +16,13 @@ Hence, this package evolves.
 
 ### Features
 
-1. **Jumps closer to cursor be single-character**.
-2. **As much as single character jumps:** Runtime hop/jump alphabet generation, making sure as max single-character jumps are used as possible (taking convenience into account), inspired by [TrieBackfilling Algorithm](https://phaazon.net/blog/hop-trie-backtrack-filling).
-3. **Flexibility:** Allows modification of which alphabet should be splitted first (see `hop-jump-keys`), and where to hop/jump (start/middle/end of match).
-4. **Clear distinction of jumps according to required keypress remaining** to that character, i.e. different faces (can be modified).
-5. Easy modification of regex, with full PCRE support, first group on regex is taken as selected match for hop.
-6. By default doesn't match within subwords (usually it is distraction with too many jump targets as nobody usually want to jump after hyphens `-`).
+1. **Single-Keypress Jumps for Targets Closer to the Cursor**.
+2. **Convenient:** Using single-keypress hop/jump as much as possible by generating hop sequence at runtime with [TrieBackfilling Algorithm](https://phaazon.net/blog/hop-trie-backtrack-filling).
+3. **Flexible:** Customizable alphabet splitting and jump location (start/middle/end of match).
+4. **Clear Distinction of Jumps** based on required keypress (faces) and that can also be customized.
+5. **Easy Modification** of Regex with **Full PCRE Support** for hop selection.
+6. **Default Exclusion of Subword Matches** for simpler jump targets (matching words after hyphen is usually a distraction by having too many jump targets).
+7. Last but not least, works across windows.
 
 
 ## Installation
@@ -48,6 +50,7 @@ If you're using elpaca/straight as package manager, write the following package 
 (use-package hop
   :elpaca (hop :host github :repo "Animeshz/hop.el"))
 ```
+
 
 ## Usage
 
