@@ -57,10 +57,8 @@
 
 (defcustom hop-word-regex "((?:[A-Za-z0-9_]|(?<=\\w)-(?=\\w)(?![A-Z]))+)"
   "Regex to use when matching a word")
-(defcustom hop-line-regex "^([^\\n]*)"
+(defcustom hop-line-regex "(^(?:.|\r?\n))"
   "Regex to use when matching a line")
-(setq hop-line-regex "(^(?:.|\r?\n))")
-
 (defcustom hop-line-skip-whitespace-regex "^[^\\S\\r\\n]*([\\S\\r\\n])"
   "Regex to use when matching a line skipping whitespace characters")
 ;; User Facing Options :: END
@@ -257,4 +255,4 @@
 
 
 (provide 'hop)
-;;; my-package.el ends here
+;;; hop.el ends here
