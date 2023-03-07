@@ -11,18 +11,6 @@
 ;; Emacs Motion on Speed!
 ;; Move anywhere in your buffer with 1 or 2 characters.
 ;;
-;; It requires https://github.com/syohex/emacs-pcre
-;; If you're using elpaca/straight as package manager, write the following package declaration:
-;;
-;; ```
-;; ;; install pcre(-dev) package first from system package manager
-;; (use-package pcre
-;;   :elpaca (pcre :host github :repo "syohex/emacs-pcre"
-;;                 :pre-build ("make" "all")
-;;                 :files (:default "pcre.el" "pcre-core.so")))
-;; (use-package hop
-;;   :elpaca (pcre :host github :repo "Animeshz/hop.el"))
-;; ```
 ;;
 ;; Defines following (TODO: tentative)
 ;; hop-word
@@ -68,8 +56,10 @@
 
 (defcustom hop-word-regex "((?:[A-Za-z0-9_]|(?<=\\w)-(?=\\w)(?![A-Z]))+)"
   "Regex to use when matching a word")
-(defcustom hop-line-regex "(^[^\\S\\r\\n]$)"
+(defcustom hop-line-regex "^([^\\n]*)"
   "Regex to use when matching a line")
+(setq hop-line-regex "(^(?:.|\r?\n))")
+
 (defcustom hop-line-skip-whitespace-regex "^[^\\S\\r\\n]*([\\S\\r\\n])"
   "Regex to use when matching a line skipping whitespace characters")
 ;; User Facing Options :: END
@@ -248,6 +238,32 @@
   (let* ((windows (hop-window-list))
          (matches (hop--regex-matches-in-windows (concat "(" (regexp-quote (string (read-char "Enter a character/letter: "))) ")") windows))
          (keys (hop--generate-jump-keys (length matches))))
+    (hop--dim-overlay windows)
+    (hop--jump-overlay matches keys)
+    (let ((key-indices (hop-indices-with-prefix (string (read-char)) keys)))
+      (hop--jump-overlay-done)
+      (if (= (length key-indices) 1)
+          (let* ((key-index (car key-indices))
+                 (match (nth key-index matches)))
+            (hop--dim-overlay-done)
+            (select-window (cdr match))
+            (goto-char (hop-calculate-jump-char match)))
+        (let* ((filtered-matches (cl-loop for index in key-indices collect (nth index matches)))
+               (filtered-keys (cl-loop for index in key-indices collect (substring (nth index keys) 1 2))))
+          (hop--jump-overlay filtered-matches filtered-keys)
+          (let* ((key-index (car (hop-indices-with-prefix (string (read-char)) filtered-keys)))
+                 (match (nth key-index filtered-matches)))
+            (hop--jump-overlay-done)
+            (hop--dim-overlay-done)
+            (select-window (cdr match))
+            (goto-char (hop-calculate-jump-char match))))))))
+
+(defun hop-line ()
+  (interactive)
+  (let* ((windows (hop-window-list))
+         (matches (hop--regex-matches-in-windows hop-line-regex windows))
+         (keys (hop--generate-jump-keys (length matches))))
+    (message "%s %s" matches keys)
     (hop--dim-overlay windows)
     (hop--jump-overlay matches keys)
     (let ((key-indices (hop-indices-with-prefix (string (read-char)) keys)))
