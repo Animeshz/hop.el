@@ -21,7 +21,7 @@
 ;;                 :pre-build ("make" "all")
 ;;                 :files (:default "pcre.el" "pcre-core.so")))
 ;; (use-package hop
-;;   :elpaca (pcre :host github :repo "Animeshz/hop.el"))
+;;   :elpaca (hop :host github :repo "Animeshz/hop.el"))
 ;; ```
 ;;
 ;; Defines following (TODO: tentative)
@@ -178,7 +178,7 @@
   (setq hop--key-overlay-save
         (flatten-tree
          (cl-mapcar #'(lambda (m hk)
-                        (let* ((start (car (car m)))
+                        (let ((start (car (car m)))
                                (end (cdr (car m)))
                                (window (cdr m))
                                (marker-len (length hk))
