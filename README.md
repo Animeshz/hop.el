@@ -4,7 +4,7 @@ An easymotion-like plugin highly inspired from [hop.nvim](https://github.com/pha
 
 ```
 Emacs Motion on Speed!
-Move anywhere in your buffer with 1 or 2 characters.
+Move anywhere in your buffer with 1 or 2 keypress.
 ```
 
 ## Why?
@@ -51,12 +51,13 @@ If you're using elpaca/straight as package manager, write the following package 
 
 ## Usage
 
-The library exposes **4 interactive functions** that can be accessed via M-x:
+The library exposes **5 interactive functions** that can be accessed via M-x:
 
 * hop-word
 * hop-char
 * hop-line
 * hop-line-skip-whitespace
+* hop-regex-pattern
 
 Each of the function matches & create hops/jumps for their respective targets in the viewable buffer.
 

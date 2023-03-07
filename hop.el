@@ -9,7 +9,7 @@
 ;;; Commentary:
 
 ;; Emacs Motion on Speed!
-;; Move anywhere in your buffer with 1 or 2 characters.
+;; Move anywhere in your buffer with 1 or 2 keypress.
 ;;
 ;;
 ;; Defines following (TODO: tentative)
@@ -17,6 +17,7 @@
 ;; hop-char
 ;; hop-line
 ;; hop-line-skip-whitespace
+;; hop-regex-pattern
 
 
 ;;; Code:
@@ -208,10 +209,9 @@
 ;; Hop Character Overlay Logic :: END
 
 ;; Main Logic (Updation and Movement) | API :: BEGIN
-(defun hop-word ()
-  (interactive)
+(defun hop--internal-interact (pattern)
   (let* ((windows (hop-window-list))
-         (matches (hop--regex-matches-in-windows hop-word-regex windows))
+         (matches (hop--regex-matches-in-windows pattern windows))
          (keys (hop--generate-jump-keys (length matches))))
     (hop--dim-overlay windows)
     (hop--jump-overlay matches keys)
@@ -232,82 +232,27 @@
             (hop--dim-overlay-done)
             (select-window (cdr match))
             (goto-char (hop-calculate-jump-char match))))))))
+
+
+(defun hop-word ()
+  (interactive)
+  (hop--internal-interact hop-word-regex))
 
 (defun hop-char ()
   (interactive)
-  (let* ((windows (hop-window-list))
-         (matches (hop--regex-matches-in-windows (concat "(" (regexp-quote (string (read-char "Enter a character/letter: "))) ")") windows))
-         (keys (hop--generate-jump-keys (length matches))))
-    (hop--dim-overlay windows)
-    (hop--jump-overlay matches keys)
-    (let ((key-indices (hop-indices-with-prefix (string (read-char)) keys)))
-      (hop--jump-overlay-done)
-      (if (= (length key-indices) 1)
-          (let* ((key-index (car key-indices))
-                 (match (nth key-index matches)))
-            (hop--dim-overlay-done)
-            (select-window (cdr match))
-            (goto-char (hop-calculate-jump-char match)))
-        (let* ((filtered-matches (cl-loop for index in key-indices collect (nth index matches)))
-               (filtered-keys (cl-loop for index in key-indices collect (substring (nth index keys) 1 2))))
-          (hop--jump-overlay filtered-matches filtered-keys)
-          (let* ((key-index (car (hop-indices-with-prefix (string (read-char)) filtered-keys)))
-                 (match (nth key-index filtered-matches)))
-            (hop--jump-overlay-done)
-            (hop--dim-overlay-done)
-            (select-window (cdr match))
-            (goto-char (hop-calculate-jump-char match))))))))
+  (hop--internal-interact (concat "(" (regexp-quote (string (read-char "Enter a character/letter: "))) ")")))
 
 (defun hop-line ()
   (interactive)
-  (let* ((windows (hop-window-list))
-         (matches (hop--regex-matches-in-windows hop-line-regex windows))
-         (keys (hop--generate-jump-keys (length matches))))
-    (message "%s %s" matches keys)
-    (hop--dim-overlay windows)
-    (hop--jump-overlay matches keys)
-    (let ((key-indices (hop-indices-with-prefix (string (read-char)) keys)))
-      (hop--jump-overlay-done)
-      (if (= (length key-indices) 1)
-          (let* ((key-index (car key-indices))
-                 (match (nth key-index matches)))
-            (hop--dim-overlay-done)
-            (select-window (cdr match))
-            (goto-char (hop-calculate-jump-char match)))
-        (let* ((filtered-matches (cl-loop for index in key-indices collect (nth index matches)))
-               (filtered-keys (cl-loop for index in key-indices collect (substring (nth index keys) 1 2))))
-          (hop--jump-overlay filtered-matches filtered-keys)
-          (let* ((key-index (car (hop-indices-with-prefix (string (read-char)) filtered-keys)))
-                 (match (nth key-index filtered-matches)))
-            (hop--jump-overlay-done)
-            (hop--dim-overlay-done)
-            (select-window (cdr match))
-            (goto-char (hop-calculate-jump-char match))))))))
+  (hop--internal-interact hop-line-regex))
 
 (defun hop-line-skip-whitespace ()
   (interactive)
-  (let* ((windows (hop-window-list))
-         (matches (hop--regex-matches-in-windows hop-line-skip-whitespace-regex windows))
-         (keys (hop--generate-jump-keys (length matches))))
-    (hop--dim-overlay windows)
-    (hop--jump-overlay matches keys)
-    (let ((key-indices (hop-indices-with-prefix (string (read-char)) keys)))
-      (hop--jump-overlay-done)
-      (if (= (length key-indices) 1)
-          (let* ((key-index (car key-indices))
-                 (match (nth key-index matches)))
-            (hop--dim-overlay-done)
-            (select-window (cdr match))
-            (goto-char (hop-calculate-jump-char match)))
-        (let* ((filtered-matches (cl-loop for index in key-indices collect (nth index matches)))
-               (filtered-keys (cl-loop for index in key-indices collect (substring (nth index keys) 1 2))))
-          (hop--jump-overlay filtered-matches filtered-keys)
-          (let* ((key-index (car (hop-indices-with-prefix (string (read-char)) filtered-keys)))
-                 (match (nth key-index filtered-matches)))
-            (hop--jump-overlay-done)
-            (hop--dim-overlay-done)
-            (select-window (cdr match))
-            (goto-char (hop-calculate-jump-char match))))))))
+  (hop--internal-interact hop-line-skip-whitespace-regex))
+
+(defun hop-regex-pattern ()
+  (interactive)
+  (hop--internal-interact (read-from-minibuffer "Pattern (first group match): " "(" nil)))
 ;; Main Logic (Updation and Movement) | API :: END
 
 
