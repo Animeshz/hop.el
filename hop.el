@@ -68,11 +68,34 @@
 
 (defcustom hop-word-regex "((?:[A-Za-z0-9_]|(?<=\\w)-(?=\\w)(?![A-Z]))+)"
   "Regex to use when matching a word")
-(defcustom hop-line-regex "^"
+(defcustom hop-line-regex "(^[^\\S\\r\\n]$)"
   "Regex to use when matching a line")
 (defcustom hop-line-skip-whitespace-regex "^[^\\S\\r\\n]*([\\S\\r\\n])"
   "Regex to use when matching a line skipping whitespace characters")
 ;; User Facing Options :: END
+
+
+;; Dependent Variables :: BEGIN
+(defvar hop--single-key-list '()
+  "Set of all possible single-char combinations that can be made using `hop-jump-keys`")
+(defvar hop--double-key-list '()
+  "Set of all possible double-char combinations that can be made using `hop-jump-keys`")
+
+(defun hop--jump-key-watcher (symbol newval op where)
+  (setq hop--single-key-list (mapcar 'string newval)
+        hop--double-key-list '())
+  (let ((hop-jump-keys-len (length newval)))
+    (dotimes (i hop-jump-keys-len)
+      (dotimes (j hop-jump-keys-len)
+        (push (concat
+               (substring newval i (1+ i))
+               (substring newval j (1+ j)))
+              hop--double-key-list)))
+    (setq hop--double-key-list (reverse hop--double-key-list))))
+
+(add-variable-watcher 'hop-jump-keys #'hop--jump-key-watcher)
+(hop--jump-key-watcher nil hop-jump-keys nil nil)
+;; Dependent Variables :: END
 
 ;; Helper Definitions :: BEGIN
 (defun hop-window-list ()
@@ -88,11 +111,12 @@
 
 (defun hop-calculate-jump-char (match)
   "Evaulate jump position respecting `hop-hints-position`"
-  (let ((start (car (car match)))
-        (end (cdr (car match))))
-   (cond ((eq hop-hints-position 'start) start
-          (eq hop-hints-position 'middle) (truncate (+ start end) 2)
-          (eq hop-hints-position 'end) end))))
+  (let* ((s (car (car match)))
+         (e (cdr (car match)))
+         (result (cond ((eq hop-hints-position 'start) s)
+                       ((eq hop-hints-position 'middle) (truncate (+ s e) 2))
+                       ((eq hop-hints-position 'end) e))))
+    result))
 ;; Helper Definitions :: END
 
 ;; Dimming Overlay Logic :: BEGIN
@@ -131,7 +155,7 @@
                 case-fold-search nil)
           (while (and (< (point) (window-end window))
                       (pcre-re-search-forward regex-pattern (window-end window) t))
-            (let ((match-pos (match-beginning 0)))
+            (let ((match-pos (match-beginning 1)))
               (push (cons (cons match-pos (match-end 0)) window) matches)))
           (setq case-fold-search default-case-fold-search))))
     (sort matches (lambda (x y)
@@ -144,17 +168,12 @@
          (split-len (- hop-jump-keys-len 1))
          (num-splits (ceiling (truncate (- n 1) split-len)))
          (num-single-hop-jump-keys (min n (max 0 (- hop-jump-keys-len num-splits))))
-         (num-double-hop-jump-keys (max 0 (- n num-single-hop-jump-keys)))
-         (double-hop-jump-keys-list '())                             ; Probably extract this always been constant item somewhere else
-         (single-hop-jump-keys-list (mapcar 'string hop-jump-keys))) ; This also
-    (dotimes (i hop-jump-keys-len)
-      (dotimes (j hop-jump-keys-len)
-         (push (concat (substring hop-jump-keys i (1+ i)) (substring hop-jump-keys j (1+ j))) double-hop-jump-keys-list)))
-    (append (cl-subseq single-hop-jump-keys-list 0 num-single-hop-jump-keys) (reverse (cl-subseq double-hop-jump-keys-list 0 num-double-hop-jump-keys)))))
+         (num-double-hop-jump-keys (max 0 (- n num-single-hop-jump-keys))))
+    (append (cl-subseq hop--single-key-list 0 num-single-hop-jump-keys) (last hop--double-key-list num-double-hop-jump-keys))))
 ;; Pattern Matching Logic :: END
 
 ;; Hop Character Overlay Logic :: BEGIN
-(defun hop--overlay-jumps (matches hop-key)
+(defun hop--jump-overlay (matches hop-key)
   "Setup hints for hopping/jumping"
   (setq hop--key-overlay-save
         (flatten-tree
@@ -168,28 +187,28 @@
                                                            marker-begin
                                                            (1+ marker-begin)
                                                            (window-buffer window))))
-                                                    (overlay-put ol1 'display hk)
-                                                    (overlay-put ol1 'window window)
-                                                    (overlay-put ol1 'face 'hop-face-single-char)
-                                                    (list ol1))
-                                               (let ((ol1 (make-overlay
-                                                           marker-begin
-                                                           (1+ marker-begin)
-                                                           (window-buffer window)))
-                                                     (ol2 (make-overlay
-                                                           (1+ marker-begin)
-                                                           (+ marker-begin 2)
-                                                           (window-buffer window))))
-                                                    (overlay-put ol1 'display (substring hk 0 1))
-                                                    (overlay-put ol1 'window window)
-                                                    (overlay-put ol1 'face 'hop-face-double-char-1)
-                                                    (overlay-put ol2 'display (message "%s" (substring hk 1 2)))
-                                                    (overlay-put ol2 'window window)
-                                                    (overlay-put ol2 'face 'hop-face-double-char-2)
-                                                    (list ol1 ol2)))))
+                                                 (overlay-put ol1 'display hk)
+                                                 (overlay-put ol1 'window window)
+                                                 (overlay-put ol1 'face 'hop-face-single-char)
+                                                 (list ol1))
+                            (let ((ol1 (make-overlay
+                                        marker-begin
+                                        (1+ marker-begin)
+                                        (window-buffer window)))
+                                  (ol2 (make-overlay
+                                        (1+ marker-begin)
+                                        (+ marker-begin 2)
+                                        (window-buffer window))))
+                              (overlay-put ol1 'display (substring hk 0 1))
+                              (overlay-put ol1 'window window)
+                              (overlay-put ol1 'face 'hop-face-double-char-1)
+                              (overlay-put ol2 'display (substring hk 1 2))
+                              (overlay-put ol2 'window window)
+                              (overlay-put ol2 'face 'hop-face-double-char-2)
+                              (list ol1 ol2)))))
                     matches hop-key))))
 
-(defun hop--overlay-jumps-done ()
+(defun hop--jump-overlay-done ()
   "Clear hints for hopping/jumping"
   (mapc #'delete-overlay hop--key-overlay-save)
   (setq hop--key-overlay-save nil))
@@ -198,24 +217,28 @@
 ;; Main Logic (Updation and Movement) | API :: BEGIN
 (defun hop-word ()
   (interactive)
-  (let* ((matches (hop--regex-matches-in-windows hop-word-regex (hop-window-list)))
+  (let* ((windows (hop-window-list))
+         (matches (hop--regex-matches-in-windows hop-word-regex windows))
          (keys (hop--generate-jump-keys (length matches))))
-    (hop--overlay-jumps matches keys)
+    (hop--dim-overlay windows)
+    (hop--jump-overlay matches keys)
     (let ((key-indices (hop-indices-with-prefix (string (read-char)) keys)))
-      (hop--overlay-jumps-done)
+      (hop--jump-overlay-done)
       (if (= (length key-indices) 1)
           (let* ((key-index (car key-indices))
                  (match (nth key-index matches)))
+            (hop--dim-overlay-done)
             (select-window (cdr match))
             (goto-char (hop-calculate-jump-char match)))
         (let* ((filtered-matches (cl-loop for index in key-indices collect (nth index matches)))
                (filtered-keys (cl-loop for index in key-indices collect (substring (nth index keys) 1 2))))
-             (hop--overlay-jumps filtered-matches filtered-keys)
-             (let* ((key-index (car (hop-indices-with-prefix (string (read-char)) filtered-keys)))
-                    (match (nth key-index filtered-matches)))
-               (hop--overlay-jumps-done)
-               (select-window (cdr match))
-               (goto-char (hop-calculate-jump-char match))))))))
+          (hop--jump-overlay filtered-matches filtered-keys)
+          (let* ((key-index (car (hop-indices-with-prefix (string (read-char)) filtered-keys)))
+                 (match (nth key-index filtered-matches)))
+            (hop--jump-overlay-done)
+            (hop--dim-overlay-done)
+            (select-window (cdr match))
+            (goto-char (hop-calculate-jump-char match))))))))
 
 
 ;; Main Logic (Updation and Movement) | API :: END
