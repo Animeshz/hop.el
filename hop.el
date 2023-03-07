@@ -180,7 +180,7 @@
                                (marker-len (length hk))
                                (marker-begin (hop-calculate-jump-char m))
                                (pos-hint-1 (if (eq (char-after start) ?\n) 'before-string 'display))
-                               (pos-hint-2 (if (or (eq marker-len 1) (eq pos-hint-1 'before-string) (eq (char-after (1+ start)) ?\n)) 'before-string 'display))
+                               (pos-hint-2 (if (or (eq marker-len 1) (eq pos-hint-1 'before-string) (eq (char-after (1+ start)) ?\n) (eq (char-after (1+ start)) nil)) 'before-string 'display))
                                (face-hint-1 (if (eq marker-len 1) 'hop-face-single-char 'hop-face-double-char-1))
                                (ol1 (make-overlay
                                      marker-begin

@@ -25,7 +25,7 @@ Hence, this package evolves.
 6. **Default Exclusion of Subword Matches** for simpler jump targets (matching words after hyphen is usually a distraction by having too many jump targets).
 7. Last but not least, works across window splits.
 
-I wouldn't say this is a feature, but in avy if you try to jump to `p` in `abc             p`, then you'll only see 1 char due to buffer overflow, once you press that you'll see futher part of sequence, but this implementation automatically addresses that using 'before-string as necessary as we reach `\n`.
+I wouldn't say this is a feature, but in avy if you try to jump to `p` in `abc             p`, then you'll only see 1 char due to buffer overflow, once you press that you'll see futher part of sequence, but this implementation automatically addresses that using 0 length overlay with 'before-string as necessary (as we reach `\n` or `EOF`).
 
 ## Installation
 
