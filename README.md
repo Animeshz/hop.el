@@ -7,6 +7,7 @@ Emacs Motion on Speed!
 Move anywhere in your buffer with 1 or 2 keypress.
 ```
 
+![Screenshot](ss.jpg)
 
 ## Why?
 
@@ -22,7 +23,7 @@ Hence, this package evolves.
 4. **Clear Distinction of Jumps** based on required keypress (faces) and that can also be customized.
 5. **Easy Modification** of Regex with **Full PCRE Support** for hop selection.
 6. **Default Exclusion of Subword Matches** for simpler jump targets (matching words after hyphen is usually a distraction by having too many jump targets).
-7. Last but not least, works across windows.
+7. Last but not least, works across window splits.
 
 
 ## Installation

@@ -12,7 +12,7 @@
 ;; Move anywhere in your buffer with 1 or 2 keypress.
 ;;
 ;;
-;; Defines following (TODO: tentative)
+;; Defines following interactive fn, accessible by M-x:
 ;; hop-word
 ;; hop-char
 ;; hop-line
