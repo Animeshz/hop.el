@@ -41,10 +41,9 @@
           (const :tag "middle" middle)
           (const :tag "end" end)))
 
-(defcustom hop-quit-key "<esc>"
-  "The key to quit hop")
 (defcustom hop-all-windows t
-  "Apply hop in all opened windows in current frame or in just current window.")
+  "Apply hop in all opened windows in current frame or in just current window."
+  :type 'boolean)
 
 (defface hop-face-dim-unmatched `((t (:foreground "#666666" :background ,(face-background 'default) :weight bold)))
   "Face used for all unmatched characters.")
@@ -56,11 +55,16 @@
   "Face used for second character of all double character hops/jumps.")
 
 (defcustom hop-word-regex "((?:[A-Za-z0-9_]|(?<=\\w)-(?=\\w)(?![A-Z]))+)"
-  "Regex to use when matching a word")
+  "Regex to use when matching a word"
+  :type 'string)
+
 (defcustom hop-line-regex "(^(?:.|\r?\n))"
-  "Regex to use when matching a line")
+  "Regex to use when matching a line"
+  :type 'string)
+
 (defcustom hop-line-skip-whitespace-regex "^[^\\S\\r\\n]*([\\S\\r\\n])"
-  "Regex to use when matching a line skipping whitespace characters")
+  "Regex to use when matching a line skipping whitespace characters"
+  :type 'string)
 ;; User Facing Options :: END
 
 
@@ -208,21 +212,24 @@
     (hop--jump-overlay matches keys)
     (let ((key-indices (hop-indices-with-prefix (string (read-char)) keys)))
       (hop--jump-overlay-done)
-      (if (= (length key-indices) 1)
-          (let* ((key-index (car key-indices))
-                 (match (nth key-index matches)))
-            (hop--dim-overlay-done)
-            (select-window (cdr match))
-            (goto-char (hop-calculate-jump-char match)))
-        (let* ((filtered-matches (cl-loop for index in key-indices collect (nth index matches)))
-               (filtered-keys (cl-loop for index in key-indices collect (substring (nth index keys) 1 2))))
-          (hop--jump-overlay filtered-matches filtered-keys)
-          (let* ((key-index (car (hop-indices-with-prefix (string (read-char)) filtered-keys)))
-                 (match (nth key-index filtered-matches)))
-            (hop--jump-overlay-done)
-            (hop--dim-overlay-done)
-            (select-window (cdr match))
-            (goto-char (hop-calculate-jump-char match))))))))
+      (cond ((= (length key-indices) 0) (hop--dim-overlay-done))  ; early exit wrong-keypress
+            ((= (length key-indices) 1) (let* ((key-index (car key-indices))
+                                               (match (nth key-index matches)))
+                                          (hop--dim-overlay-done)
+                                          (select-window (cdr match))
+                                          (goto-char (hop-calculate-jump-char match))))
+            (t (let* ((filtered-matches (cl-loop for index in key-indices collect (nth index matches)))
+                      (filtered-keys (cl-loop for index in key-indices collect (substring (nth index keys) 1 2))))
+                 (hop--jump-overlay filtered-matches filtered-keys)
+
+                 (let ((filtered-key-indices (hop-indices-with-prefix (string (read-char)) filtered-keys)))
+                   (hop--jump-overlay-done)
+                   (hop--dim-overlay-done)
+                   (if (eq (length filtered-key-indices) 1)
+                       (let* ((key-index (car filtered-key-indices))
+                              (match (nth key-index filtered-matches)))
+                         (select-window (cdr match))
+                         (goto-char (hop-calculate-jump-char match)))))))))))
 
 
 (defun hop-word ()

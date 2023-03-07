@@ -68,8 +68,3 @@ Each of the function matches & create hops/jumps for their respective targets in
 
 Package also exposes a few **user-customizable variables**, see the top of [hop.el](hop.el).
 
-### Known Issues
-
-These things has to be nitpicked:
-
-* Wrong key press / mouse-move interrupts are not handled.
