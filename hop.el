@@ -174,30 +174,23 @@
                                (end (cdr (car m)))
                                (window (cdr m))
                                (marker-len (length hk))
-                               (marker-begin (hop-calculate-jump-char m)))
-                          (if (= marker-len 1) (let ((ol1 (make-overlay
-                                                           marker-begin
-                                                           (1+ marker-begin)
-                                                           (window-buffer window))))
-                                                 (overlay-put ol1 'display hk)
-                                                 (overlay-put ol1 'window window)
-                                                 (overlay-put ol1 'face 'hop-face-single-char)
-                                                 (list ol1))
-                            (let ((ol1 (make-overlay
-                                        marker-begin
-                                        (1+ marker-begin)
-                                        (window-buffer window)))
-                                  (ol2 (make-overlay
-                                        (1+ marker-begin)
-                                        (+ marker-begin 2)
-                                        (window-buffer window))))
-                              (overlay-put ol1 'display (substring hk 0 1))
+                               (marker-begin (hop-calculate-jump-char m))
+                               (pos-hint-1 (if (eq (char-after start) ?\n) 'before-string 'display))
+                               (pos-hint-2 (if (or (eq marker-len 1) (eq pos-hint-1 'before-string) (eq (char-after (1+ start)) ?\n)) 'before-string 'display))
+                               (face-hint-1 (if (eq marker-len 1) 'hop-face-single-char 'hop-face-double-char-1))
+                               (ol1 (make-overlay
+                                     marker-begin
+                                     (+ marker-begin (if (eq pos-hint-1 'display) 1 0))
+                                     (window-buffer window)))
+                               (ol2 (make-overlay
+                                     (1+ marker-begin)
+                                     (1+ (+ marker-begin (if (eq pos-hint-2 'display) 1 0)))
+                                     (window-buffer window))))
+                              (overlay-put ol1 pos-hint-1 (propertize (substring hk 0 1) 'face face-hint-1))
                               (overlay-put ol1 'window window)
-                              (overlay-put ol1 'face 'hop-face-double-char-1)
-                              (overlay-put ol2 'display (substring hk 1 2))
+                              (overlay-put ol2 pos-hint-2 (propertize (substring hk 1 (min 2 marker-len)) 'face 'hop-face-double-char-2))
                               (overlay-put ol2 'window window)
-                              (overlay-put ol2 'face 'hop-face-double-char-2)
-                              (list ol1 ol2)))))
+                              (list ol1 ol2)))
                     matches hop-key))))
 
 (defun hop--jump-overlay-done ()
