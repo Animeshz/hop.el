@@ -21,7 +21,7 @@
 ;;                 :pre-build ("make" "all")
 ;;                 :files (:default "pcre.el" "pcre-core.so")))
 ;; (use-package hop
-;;   :elpaca (pcre :host github :repo "Animeshz/hop.el"))
+;;   :elpaca (hop :host github :repo "Animeshz/hop.el"))
 ;; ```
 ;;
 ;; Defines following (TODO: tentative)
