@@ -182,6 +182,8 @@
                                (pos-hint-1 (if (eq (char-after start) ?\n) 'before-string 'display))
                                (pos-hint-2 (if (or (eq marker-len 1) (eq pos-hint-1 'before-string) (eq (char-after (1+ start)) ?\n) (eq (char-after (1+ start)) nil)) 'before-string 'display))
                                (face-hint-1 (if (eq marker-len 1) 'hop-face-single-char 'hop-face-double-char-1))
+                               (hint-1 (propertize (substring hk 0 (if (eq pos-hint-1 'display) 1 marker-len)) 'face face-hint-1))
+                               (hint-2 (propertize (substring hk 1 (if (eq pos-hint-1 'display) (min 2 marker-len) 1)) 'face 'hop-face-double-char-2))
                                (ol1 (make-overlay
                                      marker-begin
                                      (+ marker-begin (if (eq pos-hint-1 'display) 1 0))
@@ -190,11 +192,12 @@
                                      (1+ marker-begin)
                                      (1+ (+ marker-begin (if (eq pos-hint-2 'display) 1 0)))
                                      (window-buffer window))))
-                              (overlay-put ol1 pos-hint-1 (propertize (substring hk 0 1) 'face face-hint-1))
-                              (overlay-put ol1 'window window)
-                              (overlay-put ol2 pos-hint-2 (propertize (substring hk 1 (min 2 marker-len)) 'face 'hop-face-double-char-2))
-                              (overlay-put ol2 'window window)
-                              (list ol1 ol2)))
+                          (if (and (eq pos-hint-1 'before-string) (eq marker-len 2)) (set-text-properties 1 2 '(face hop-face-double-char-2) hint-1))
+                          (overlay-put ol1 pos-hint-1 hint-1)
+                          (overlay-put ol1 'window window)
+                          (overlay-put ol2 pos-hint-2 hint-2)
+                          (overlay-put ol2 'window window)
+                          (list ol1 ol2)))
                     matches hop-key))))
 
 (defun hop--jump-overlay-done ()
