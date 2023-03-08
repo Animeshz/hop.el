@@ -161,8 +161,9 @@
          (split-len (- hop-jump-keys-len 1))
          (num-splits (ceiling (truncate (- n 1) split-len)))
          (num-single-hop-jump-keys (min n (max 0 (- hop-jump-keys-len num-splits))))
-         (num-double-hop-jump-keys (max 0 (- n num-single-hop-jump-keys))))
-    (append (cl-subseq hop--single-key-list 0 num-single-hop-jump-keys) (last hop--double-key-list num-double-hop-jump-keys))))
+         (num-double-hop-jump-keys (max 0 (- n num-single-hop-jump-keys)))
+         (modifier (if (eq hop-uppercase-hints t) 'upcase 'identity)))
+    (mapcar modifier (append (cl-subseq hop--single-key-list 0 num-single-hop-jump-keys) (last hop--double-key-list num-double-hop-jump-keys)))))
 ;; Pattern Matching Logic :: END
 
 ;; Hop Character Overlay Logic :: BEGIN
