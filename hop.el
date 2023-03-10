@@ -115,6 +115,18 @@
   "Reads a char from minibuffer as a string value"
   (let ((char (decode-char 'ucs (read-char PROMPT))))
     (char-to-string (or char 27))))  ; Treat as <esc> incase invalid character
+
+(defun hop-normalize-match-range (match)
+  "Normalize the matches by converting byte count to character count"
+  (let* ((begin (car (car match)))
+         (end (cdr (car match)))
+         (begin-chars (buffer-substring-no-properties 1 (1- begin)))
+         (begin-bytes (length (encode-coding-string begin-chars 'utf-8)))
+         (begin-offset (- begin-bytes (length begin-chars)))
+         (middle-chars (buffer-substring-no-properties begin (1- end)))
+         (middle-bytes (length (encode-coding-string middle-chars 'utf-8)))
+         (end-offset (+ begin-offset (- middle-bytes (length middle-chars)))))
+    (cons (cons (- begin begin-offset) (- end end-offset)) (cdr match))))
 ;; Helper Definitions :: END
 
 ;; Dimming Overlay Logic :: BEGIN
@@ -154,7 +166,7 @@
           (while (and (< (point) (window-end window))
                       (pcre-re-search-forward regex-pattern (window-end window) t))
             (let ((match-pos (match-beginning 1)))
-              (push (cons (cons match-pos (match-end 0)) window) matches)))
+              (push (hop-normalize-match-range (cons (cons match-pos (match-end 0)) window)) matches)))
           (setq case-fold-search default-case-fold-search))))
     (sort matches (lambda (x y)
                     (< (abs (- (car (car x)) cursor-pos))
