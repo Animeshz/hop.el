@@ -110,6 +110,11 @@
                        ((eq hop-hints-position 'middle) (truncate (+ s e) 2))
                        ((eq hop-hints-position 'end) e))))
     result))
+
+(defun hop-read-char-as-string (&optional PROMPT)
+  "Reads a char from minibuffer as a string value"
+  (let ((char (decode-char 'ucs (read-char PROMPT))))
+    (char-to-string (or char 27))))  ; Treat as <esc> incase invalid character
 ;; Helper Definitions :: END
 
 ;; Dimming Overlay Logic :: BEGIN
@@ -214,7 +219,7 @@
          (keys (hop--generate-jump-keys (length matches))))
     (hop--dim-overlay windows)
     (hop--jump-overlay matches keys)
-    (let ((key-indices (hop-indices-with-prefix (string (read-char)) keys)))
+    (let ((key-indices (hop-indices-with-prefix (hop-read-char-as-string) keys)))
       (hop--jump-overlay-done)
       (cond ((= (length key-indices) 0) (hop--dim-overlay-done))  ; early exit wrong-keypress
             ((= (length key-indices) 1) (let* ((key-index (car key-indices))
@@ -226,7 +231,7 @@
                       (filtered-keys (cl-loop for index in key-indices collect (substring (nth index keys) 1 2))))
                  (hop--jump-overlay filtered-matches filtered-keys)
 
-                 (let ((filtered-key-indices (hop-indices-with-prefix (string (read-char)) filtered-keys)))
+                 (let ((filtered-key-indices (hop-indices-with-prefix (hop-read-char-as-string) filtered-keys)))
                    (hop--jump-overlay-done)
                    (hop--dim-overlay-done)
                    (if (eq (length filtered-key-indices) 1)
@@ -242,7 +247,7 @@
 
 (defun hop-char ()
   (interactive)
-  (hop--internal-interact (concat "(" (regexp-quote (string (read-char "Enter a character/letter: "))) ")")))
+  (hop--internal-interact (concat "(" (regexp-quote (hop-read-char-as-string "Enter a character/letter: ")) ")")))
 
 (defun hop-line ()
   (interactive)
