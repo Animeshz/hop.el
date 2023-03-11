@@ -120,10 +120,10 @@
   "Normalize the matches by converting byte count to character count"
   (let* ((begin (car (car match)))
          (end (cdr (car match)))
-         (begin-chars (buffer-substring-no-properties 1 (1- begin)))
+         (begin-chars (buffer-substring-no-properties 1 begin))
          (begin-bytes (length (encode-coding-string begin-chars 'utf-8)))
          (begin-offset (- begin-bytes (length begin-chars)))
-         (middle-chars (buffer-substring-no-properties begin (1- end)))
+         (middle-chars (buffer-substring-no-properties begin end))
          (middle-bytes (length (encode-coding-string middle-chars 'utf-8)))
          (end-offset (+ begin-offset (- middle-bytes (length middle-chars)))))
     (cons (cons (- begin begin-offset) (- end end-offset)) (cdr match))))
