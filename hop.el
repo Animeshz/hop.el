@@ -113,8 +113,8 @@
 
 (defun hop-read-char-as-string (&optional PROMPT)
   "Reads a char from minibuffer as a string value"
-  (let ((char (decode-char 'ucs (read-char PROMPT))))
-    (char-to-string (or char 27))))  ; Treat as <esc> incase invalid character
+  (let ((key (read-key PROMPT)))
+    (char-to-string (if (characterp key) key 27))))  ; Treat as <esc> incase invalid character
 
 (defun hop-normalize-match-range (match)
   "Normalize the matches by converting byte count to character count"
