@@ -135,6 +135,9 @@
 
 (defun hop--dim-overlay (windows)
   "Applies dim-overlay to all the windows in wnd-list."
+  (seq-doseq (window windows)
+    (with-current-buffer (window-buffer window)
+      (remove-overlays nil nil 'hop--overlay t)))
   (setq hop--dim-overlay-save
         (mapcar (lambda (w)
                   (let ((ol (make-overlay
@@ -143,6 +146,7 @@
                              (window-buffer w))))
                     (overlay-put ol 'face 'hop-face-dim-unmatched)
                     (overlay-put ol 'window w)
+                    (overlay-put ol 'hop--overlay t)
                     ol))
                 windows)))
 
@@ -213,8 +217,10 @@
                           (if (and (eq pos-hint-1 'before-string) (eq marker-len 2)) (set-text-properties 1 2 '(face hop-face-double-char-2) hint-1))
                           (overlay-put ol1 pos-hint-1 hint-1)
                           (overlay-put ol1 'window window)
+                          (overlay-put ol1 'hop--overlay t)
                           (overlay-put ol2 pos-hint-2 hint-2)
                           (overlay-put ol2 'window window)
+                          (overlay-put ol2 'hop--overlay t)
                           (list ol1 ol2)))
                     matches hop-key))))
 
