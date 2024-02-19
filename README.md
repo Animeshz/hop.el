@@ -46,11 +46,11 @@ If you're using elpaca/straight as package manager, write the following package 
 ```lisp
 (use-package pcre
   ;; :straight if you use stright.el
-  :elpaca (pcre :host github :repo "syohex/emacs-pcre"
+  :ensure (pcre :host github :repo "syohex/emacs-pcre"
                   :pre-build ("make" "all")
                   :files (:default "pcre.el" "pcre-core.so")))
 (use-package hop
-  :elpaca (hop :host github :repo "Animeshz/hop.el"))
+  :ensure (hop :host github :repo "Animeshz/hop.el"))
 ```
 
 
